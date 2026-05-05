@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"shai/cmd"
+	"github.com/ameb8/shai/cmd"
 )
 
 func main() {

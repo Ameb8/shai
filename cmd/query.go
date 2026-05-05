@@ -3,10 +3,12 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"shai/internal/parser"
-	"shai/internal/prompt"
-	"shai/internal/provider"
 	"strings"
+
+	"github.com/ameb8/shai/internal/agent"
+	"github.com/ameb8/shai/internal/parser"
+	"github.com/ameb8/shai/internal/prompt"
+	"github.com/ameb8/shai/internal/provider"
 
 	"github.com/spf13/cobra"
 )
@@ -45,10 +47,8 @@ func runQuery(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	// 3. LLM Completion Loop (Tool use not fully implemented yet)
-	resp, err := p.Complete(ctx, provider.CompletionRequest{
-		Messages: messages,
-	})
+	// 3. Provider-agnostic LLM completion loop with whitelisted terminal access.
+	resp, err := agent.Complete(ctx, p, messages)
 	if err != nil {
 		return fmt.Errorf("LLM completion failed: %w", err)
 	}

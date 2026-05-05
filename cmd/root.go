@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"shai/internal/config"
+	"github.com/ameb8/shai/internal/config"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
