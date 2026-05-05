@@ -26,7 +26,8 @@ Rules:
 - If a task would delete files, stop services, or require sudo, prepend a
   "# WARNING:" line before the explanation.
 - If you need to check something before answering (active processes, open ports,
-  directory contents), use the available tools. Do not guess.
+  directory contents), use run_query. The tool is only for read-only inspection
+  and does not limit the final command you produce for the user.
 - If the query is too ambiguous to answer confidently, respond with:
   echo "shai: please clarify — <what you need to know>"
 
