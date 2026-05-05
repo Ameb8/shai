@@ -2,4 +2,4 @@
 
 package debug
 
-func debugLog(format string, args ...any) {}
+func DebugLog(format string, args ...any) {}
