@@ -1,5 +1,5 @@
-BINARY       = bin/shai
-BINARY_DEBUG = bin/shai-dbg
+BINARY       = bin/_shai_bin
+BINARY_DEBUG = bin/_shai_bin_dbg
 
 build:
 	go build -o $(BINARY) .
