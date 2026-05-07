@@ -7,12 +7,14 @@ import (
 	"text/template"
 )
 
+// SystemPromptData contains the environmental context used to populate the system prompt template.
 type SystemPromptData struct {
 	OS    string
 	Shell string
 	Cwd   string
 }
 
+// systemPromptTemplate defines the base instructions and constraints for the AI agent.
 const systemPromptTemplate = `You are shai, a terminal assistant running on {{.OS}} with {{.Shell}}.
 
 The user will describe what they want to do in natural language.
@@ -25,9 +27,13 @@ Rules:
 - Prefer commands available by default on {{.OS}}.
 - If a task would delete files, stop services, or require sudo, prepend a
   "# WARNING:" line before the explanation.
-- If you need to check something before answering (active processes, open ports,
-  directory contents), use run_query. The tool is only for read-only inspection
-  and does not limit the final command you produce for the user.
+- Conserve tokens and latency: default to writing the command directly.
+- Use run_query only when a runtime fact is required to produce the final
+  command correctly (for example: active PID, currently open port, exact repo
+  state, installed version, or unknown path/filename that must be discovered).
+- Do not call run_query just to validate or preview a command you can already
+  write from the request.
+- Never run the same run_query command twice, instead view previous results, or try something else only inf necessary
 - If the query is too ambiguous to answer confidently, respond with:
   echo "shai: please clarify — <what you need to know>"
 
@@ -37,7 +43,9 @@ Output format (strictly):
 # WARNING: <only if applicable>
 `
 
+// BuildSystemPrompt constructs the full system prompt string by injecting runtime context into the template.
 func BuildSystemPrompt(shellOverride string) (string, error) {
+	// Resolve the current working directory and shell environment.
 	cwd, _ := os.Getwd()
 	shell := shellOverride
 	if shell == "" {
@@ -53,6 +61,7 @@ func BuildSystemPrompt(shellOverride string) (string, error) {
 		Cwd:   cwd,
 	}
 
+	// Parse and execute the system prompt template with the gathered context.
 	tmpl, err := template.New("system").Parse(systemPromptTemplate)
 	if err != nil {
 		return "", err
