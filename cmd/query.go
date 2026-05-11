@@ -15,9 +15,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// ProviderOverride allows tests to substitute a mock provider for the real registry.
+var ProviderOverride provider.Provider
+
 // runQuery executes the core agent loop to translate a user's natural language
-// request into a shell command. It manages prompt construction, provider
-// interaction, and output formatting.
 func runQuery(cmd *cobra.Command, args []string) error {
 	ctx := context.Background()
 	query := strings.Join(args, " ")
@@ -27,7 +28,7 @@ func runQuery(cmd *cobra.Command, args []string) error {
 	if providerName == "" {
 		providerName = cfg.Active.Provider
 	}
-	if providerName == "" {
+	if providerName == "" && ProviderOverride == nil {
 		return fmt.Errorf("no provider configured. Use 'shai config set-provider' or --provider flag")
 	}
 
@@ -45,10 +46,15 @@ func runQuery(cmd *cobra.Command, args []string) error {
 		{Role: "user", Content: query},
 	}
 
-	// Initialize the requested AI provider with the active configuration.
-	p, err := provider.NewProvider(ctx, providerName, *cfg, modelOverride)
-	if err != nil {
-		return err
+	var p provider.Provider
+	if ProviderOverride != nil {
+		p = ProviderOverride
+	} else {
+		// Initialize the requested AI provider with the active configuration.
+		p, err = provider.NewProvider(ctx, providerName, *cfg, modelOverride)
+		if err != nil {
+			return err
+		}
 	}
 
 	// Execute the completion loop, allowing the agent to use tools if necessary.
