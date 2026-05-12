@@ -1,0 +1,53 @@
+name: CI
+
+# Run on PR to master
+on:
+  pull_request:
+    branches: [master]
+
+# Cancel in-flight runs for the same PR on new pushes
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Run in-process Go-native test suite
+  go-test:
+    name: Go Tests
+    runs-on: ubuntu-latest
+    steps:
+      # Full checkout is required so go mod verify can validate the full
+      # module graph against the committed go.sum
+      - uses: actions/checkout@v4
+
+      # Set up Go environment
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          # Read the Go version from go.mod
+          go-version-file: go.mod
+
+          # Cache the module download cache and build cache between runs
+          cache: true
+
+      # Confirms that go.sum matches the actual checksums of downloaded modules.
+      - name: Verify dependencies
+        run: go mod verify
+
+      # Compile project without running tests
+      # Fail-fast if build error occurs
+      - name: Build
+        run: go build ./...
+
+      - name: Run tests
+        run: |
+          go test \
+            -tags ci \    # Activates //go:build !ci exclusions, stripping out
+                          # platform-specific (pty) and live-credential tests
+                          # that cannot run in a headless CI environment.
+            -race \       # Enables the Go race detector. Adds ~2x runtime overhead
+                          # but catches data races that only manifest under concurrency.
+            -count=1 \    # Disables the test result cache. Without this, 'go test'
+                          # can return a cached PASS without re-running anything,
+                          # hiding failures introduced by environmental changes.
+            ./...         # Run tests in all packages recursively.
