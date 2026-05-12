@@ -1,0 +1,70 @@
+name: Release
+
+# Run when a semantic-version-style git tag is pushed.
+#
+# Examples:
+#   git tag v1.2.0
+#   git push origin v1.2.0
+#
+on:
+  push:
+    tags:
+      - "v*"
+
+# Required so GoReleaser can:
+# - create GitHub Releases
+# - upload release assets
+# - create/update release metadata
+permissions:
+  contents: write
+
+jobs: 
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      # Checkout full git history and tags
+      #
+      # fetch-depth: 0 is required because GoReleaser uses git history
+      # and tags to:
+      # - determine the current version
+      # - generate changelogs
+      # - compute previous releases
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Install the Go version declared in go.mod
+      #
+      # This keeps local development and CI aligned automatically
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      # Build and publish release artifacts using GoReleaser
+      #
+      # This performs the full release pipeline defined in goreleaser.yaml:
+      # - cross-compiles binaries
+      # - creates archives/checksums
+      # - publishes a GitHub Release
+      # - updates the Homebrew tap formula
+      #
+      # --clean removes the dist/ directory before building to avoid
+      # stale artifacts contaminating releases
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v6
+        with:
+          # Always use the latest GoReleaser version available
+          version: latest
+          # Execute a production release build/publish
+          args: release --clean
+        env:
+          # Automatically provided GitHub token used for:
+          # - creating releases
+          # - uploading release assets
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          
+          # Personal access token used to push updates to the
+          # separate Homebrew tap repository
+          HOMEBREW_TAP_GITHUB_TOKEN: ${{ secrets.TAP_TOKEN }}
