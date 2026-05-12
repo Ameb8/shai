@@ -41,13 +41,18 @@ jobs:
 
       - name: Run tests
         run: |
+          # -tags ci: Activates //go:build !ci exclusions, stripping out
+          # platform-specific (pty) and live-credential tests
+          # that cannot run in a headless CI environment.
+          #
+          # -race: Enables the Go race detector. Adds ~2x runtime overhead
+          # but catches data races that only manifest under concurrency.
+          #
+          # -count=1: Disables the test result cache. Without this, 'go test'
+          # can return a cached PASS without re-running anything,
+          # hiding failures introduced by environmental changes.
           go test \
-            -tags ci \    # Activates //go:build !ci exclusions, stripping out
-                          # platform-specific (pty) and live-credential tests
-                          # that cannot run in a headless CI environment.
-            -race \       # Enables the Go race detector. Adds ~2x runtime overhead
-                          # but catches data races that only manifest under concurrency.
-            -count=1 \    # Disables the test result cache. Without this, 'go test'
-                          # can return a cached PASS without re-running anything,
-                          # hiding failures introduced by environmental changes.
-            ./...         # Run tests in all packages recursively.
+            -tags ci \
+            -race \
+            -count=1 \
+            ./...
