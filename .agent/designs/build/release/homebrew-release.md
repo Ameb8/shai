@@ -432,3 +432,20 @@ GoReleaser overwrites the formula in the tap repo on each release, so users runn
 **GoReleaser Pro.** The free tier covers everything in this guide. Pro adds features like signing binaries with cosign, Homebrew cask support, Scoop manifests for Windows, and Docker image publishing.
 
 **Local builds with `goreleaser build`.** During development, `goreleaser build --single-target --snapshot` builds only the binary for your current OS/arch quickly, without producing archives or touching any remote services.
+
+### Project-Specific Info
+
+Homebrew Tap Repo is https://github.com/ameb8/homebrew-tools
+This prooject's repo is https://github.com/ameb8/shai
+
+## Additional Instructions
+
+Only implement the files/logic/changes that happen inside this repo. Files in the homebrew tab repository will be managed in that repo, as well as github personall access tokens. But everything in this document internal to the shai repository should be implemented.
+
+## Repo-Local Implementation Plan
+
+1. Add build-time version metadata variables in `main.go` and wire them into the Cobra root command so `--version` works for GoReleaser and Homebrew formula tests.
+2. Update the shell wrapper scripts in `scripts/` to call `_shai_bin` from `PATH` by default, while retaining `SHAI_DEV_BIN` as a local-development override.
+3. Add a root `.goreleaser.yaml` that builds `_shai_bin` for Darwin/Linux amd64/arm64, bundles the `scripts/shai.sh` and `scripts/shai.zsh` wrappers, publishes GitHub release assets for `ameb8/shai`, and generates a Homebrew formula targeting `ameb8/homebrew-tools`.
+4. Add `.github/workflows/release.yml` so pushed `v*` tags run GoReleaser with repository `GITHUB_TOKEN` and the externally-managed `TAP_TOKEN` secret.
+5. Run formatting and tests to verify the existing query flow and new version path remain intact.
