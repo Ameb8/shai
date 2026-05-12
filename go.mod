@@ -3,6 +3,7 @@ module github.com/ameb8/shai
 go 1.25.0
 
 require (
+	github.com/atotto/clipboard v0.1.4
 	github.com/google/generative-ai-go v0.20.1
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/viper v1.21.0

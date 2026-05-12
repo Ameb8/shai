@@ -75,6 +75,7 @@ func setupRootFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringP("model", "m", "", "Model or alias override")
 	cmd.PersistentFlags().Bool("think", false, "Use smart model")
 	cmd.PersistentFlags().Bool("dry-run", false, "Print command only, do not inject")
+	cmd.PersistentFlags().BoolP("copy", "c", false, "Copy the generated command to clipboard")
 	cmd.PersistentFlags().BoolP("verbose", "v", false, "Print token usage and latency")
 	cmd.PersistentFlags().Bool("no-explain", false, "Suppress explanation lines")
 	cmd.PersistentFlags().String("shell", "", "Override shell (bash|zsh|fish)")

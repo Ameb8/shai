@@ -8,6 +8,7 @@ import (
 
 	"github.com/ameb8/shai/cmd"
 	"github.com/ameb8/shai/internal/testutil/mockprovider"
+	"github.com/atotto/clipboard"
 )
 
 // TestCLI_OutputContract verifies that the CLI correctly displays the command
@@ -133,3 +134,38 @@ func TestCLI_CmdFile(t *testing.T) {
 		t.Errorf("expected cmd-file content %q, got %q", "echo hello", string(content))
 	}
 }
+
+// TestCLI_CopyFlag verifies that the --copy flag copies the command to the clipboard.
+func TestCLI_CopyFlag(t *testing.T) {
+	finalContent := "echo hello\n# print hello"
+	script := []mockprovider.Turn{
+		{
+			FinalContent: finalContent,
+		},
+	}
+	cmd.ProviderOverride = mockprovider.New(t, script)
+	t.Cleanup(func() { cmd.ProviderOverride = nil })
+
+	// Execute with --copy flag.
+	stdout, stderr, err := RunCLI(t, "query", "--shell", "/bin/bash", "--copy", "say hello")
+
+	if err != nil {
+		t.Fatalf("RunCLI failed: %v\nStderr: %s", err, stderr)
+	}
+
+	// Validate the command was printed.
+	if !strings.Contains(stdout, "> echo hello") {
+		t.Errorf("expected stdout to contain command, got %q", stdout)
+	}
+
+	// Attempt to verify clipboard content.
+	got, err := clipboard.ReadAll()
+	if err == nil {
+		if got != "echo hello" {
+			t.Errorf("expected clipboard content %q, got %q", "echo hello", got)
+		}
+	} else {
+		t.Logf("Skipping clipboard verification: %v", err)
+	}
+}
+

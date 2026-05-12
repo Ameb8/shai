@@ -12,6 +12,7 @@ import (
 	"github.com/ameb8/shai/internal/prompt"
 	"github.com/ameb8/shai/internal/provider"
 
+	"github.com/atotto/clipboard"
 	"github.com/spf13/cobra"
 )
 
@@ -74,6 +75,14 @@ func runQuery(cmd *cobra.Command, args []string) error {
 	if !noExplain {
 		for _, line := range parsed.Explanation {
 			cmd.Printf("# %s\n", line)
+		}
+	}
+
+	// Copy the command to clipboard if requested.
+	copyFlag, _ := cmd.Flags().GetBool("copy")
+	if copyFlag && parsed.Command != "" {
+		if err := clipboard.WriteAll(parsed.Command); err != nil {
+			fmt.Fprintf(os.Stderr, "# Warning: failed to copy to clipboard: %v\n", err)
 		}
 	}
 
