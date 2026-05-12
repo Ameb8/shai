@@ -45,26 +45,34 @@ CLAUDE.md
 # Google Gemini
 GEMINI.md
 .gemini/
+.gemini
 
 # Cursor
 .cursorrules
 .cursor/
+.cursor
 
 # Windsurf / Codeium
 .windsurf/
+.windsurf
 .codeium/
+.codeium
 
 # Continue.dev
 .continue/
+.continue
 
 # Cline
 .cline/
+.cline
 
 # Roo Code
 .roo/
+.roo
 
 # OpenAI experimental/local tooling
 .openai/
+.openai
 
 # Aider
 .aider*
