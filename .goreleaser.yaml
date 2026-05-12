@@ -1,0 +1,65 @@
+version: 2
+
+project_name: shai
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - binary: _shai_bin
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - darwin
+      - linux
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+      - -X main.version={{ .Version }}
+      - -X main.commit={{ .Commit }}
+      - -X main.date={{ .Date }}
+
+archives:
+  - formats:
+      - tar.gz
+    name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
+    files:
+      - src: scripts/shai.sh
+        dst: shai.sh
+      - src: scripts/shai.zsh
+        dst: shai.zsh
+
+checksum:
+  name_template: checksums.txt
+
+release:
+  github:
+    owner: ameb8
+    name: shai
+
+brews:
+  - name: shai
+    repository:
+      owner: ameb8
+      name: homebrew-tools
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+    homepage: "https://github.com/ameb8/shai"
+    description: "Terminal-native AI agent that turns natural language into shell commands"
+    license: "MIT"
+    install: |
+      bin.install "_shai_bin"
+      (etc/"profile.d").install "shai.sh"
+      (etc/"profile.d").install "shai.zsh"
+    test: |
+      system "#{bin}/_shai_bin --version"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^chore:"

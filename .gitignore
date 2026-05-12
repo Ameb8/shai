@@ -1,0 +1,79 @@
+# Binary executables
+# ----------------
+bin/
+dist/
+
+# Test and Coverage
+# -----------------
+*.test
+*.out
+coverage.txt
+profile.out
+
+# IDEs and Editors
+# ----------------
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Environment Variables
+# ---------------------
+.env
+.env.local
+
+# GitHub Draft Files
+# ---------------------
+.github/*-draft
+
+# Ephemeral Agent Files
+# ---------------------
+.agent/instructions/
+
+
+# Canonical agent config is:
+#   AGENTS.md
+#   .agents/
+#
+# Provider-specific compatibility shims are generated locally.
+
+# Anthropic Claude Code
+CLAUDE.md
+
+# Google Gemini
+GEMINI.md
+.gemini/
+.gemini
+
+# Cursor
+.cursorrules
+.cursor/
+.cursor
+
+# Windsurf / Codeium
+.windsurf/
+.windsurf
+.codeium/
+.codeium
+
+# Continue.dev
+.continue/
+.continue
+
+# Cline
+.cline/
+.cline
+
+# Roo Code
+.roo/
+.roo
+
+# OpenAI experimental/local tooling
+.openai/
+.openai
+
+# Aider
+.aider*
+
