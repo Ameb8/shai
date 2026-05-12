@@ -31,22 +31,57 @@ func Execute() error {
 	return rootCmd.Execute()
 }
 
+// NewRootCmd creates and configures a new instance of the root command.
+// If cfgOverride is provided, it is used as the global configuration and
+// automatic configuration initialization is skipped.
+func NewRootCmd(cfgOverride *config.Config) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "shai [query]",
+		Short: "Natural language shell assistant",
+		Long: `shai is a terminal-native AI agent that converts natural language into a single shell command, 
+staged in the user’s prompt buffer for manual execution.`,
+		Args: cobra.ArbitraryArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if len(args) == 0 {
+				return cmd.Help()
+			}
+			return runQuery(cmd, args)
+		},
+	}
+
+	if cfgOverride != nil {
+		cfg = cfgOverride
+	} else {
+		cobra.OnInitialize(initConfig)
+	}
+
+	setupRootFlags(cmd)
+	addConfigurationCommands(cmd)
+
+	return cmd
+}
+
 func init() {
 	// Register the configuration initializer to run before command execution.
 	cobra.OnInitialize(initConfig)
 
+	setupRootFlags(rootCmd)
+}
+
+// setupRootFlags defines the persistent CLI flags that are available globally across all subcommands.
+func setupRootFlags(cmd *cobra.Command) {
 	// Define persistent flags that are available globally across all subcommands.
-	rootCmd.PersistentFlags().StringP("provider", "p", "", "LLM provider override")
-	rootCmd.PersistentFlags().StringP("model", "m", "", "Model or alias override")
-	rootCmd.PersistentFlags().Bool("think", false, "Use smart model")
-	rootCmd.PersistentFlags().Bool("dry-run", false, "Print command only, do not inject")
-	rootCmd.PersistentFlags().BoolP("verbose", "v", false, "Print token usage and latency")
-	rootCmd.PersistentFlags().Bool("no-explain", false, "Suppress explanation lines")
-	rootCmd.PersistentFlags().String("shell", "", "Override shell (bash|zsh|fish)")
-	rootCmd.PersistentFlags().String("cmd-file", "", "Write the final command to this file instead of stdout")
+	cmd.PersistentFlags().StringP("provider", "p", "", "LLM provider override")
+	cmd.PersistentFlags().StringP("model", "m", "", "Model or alias override")
+	cmd.PersistentFlags().Bool("think", false, "Use smart model")
+	cmd.PersistentFlags().Bool("dry-run", false, "Print command only, do not inject")
+	cmd.PersistentFlags().BoolP("verbose", "v", false, "Print token usage and latency")
+	cmd.PersistentFlags().Bool("no-explain", false, "Suppress explanation lines")
+	cmd.PersistentFlags().String("shell", "", "Override shell (bash|zsh|fish)")
+	cmd.PersistentFlags().String("cmd-file", "", "Write the final command to this file instead of stdout")
 
 	// Map CLI flags to Viper configuration keys for unified access.
-	viper.BindPFlag("active.provider", rootCmd.PersistentFlags().Lookup("provider"))
+	viper.BindPFlag("active.provider", cmd.PersistentFlags().Lookup("provider"))
 }
 
 // cfg maintains the application state and configuration throughout the execution.
