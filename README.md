@@ -1,79 +1,166 @@
 # shai
 
-`shai` turns a natural-language request into one shell command.
+`shai` is a terminal-native AI agent that turns a natural-language request into a single shell command.
 
 It prints:
-- explanation lines prefixed with `#`
-- the generated command prefixed with `>`
+- Explanation lines prefixed with `#`
+- The generated command prefixed with `>`
 
-It does not execute the command for you.
+`shai` does not execute commands directly. Instead, it stages them for your review. In *Zsh* shells, they are injected into the shell's input buffer, allowing for execution by simply pressing the enter key. Bash shells print out the command normally and copies it to the keyboard.
+
+`shai` is able to query system and environment data in order to construct correct commands. The final output command returned by `shai` is not restricted to read-only commands. `shai` will output a warning if LLM deems command to be risky or dangerous.
+
+## Installation
+
+### HomeBrew (Recommended for MacOS)
+
+#### Install `shai` with the Official Tap:
+
+```bash
+brew install ameb8/tools/shai
+```
+
+or
+
+```bash
+brew tap ameb8/tools
+brew install shai
+```
+
+#### Source `shai` Automatically
+
+##### Add to `~/.zshrc`
+
+```bash
+source $(brew --prefix)/etc/profile.d/shai.zsh
+```
+
+##### Add to `~/.bashrc`
+
+```bash
+source $(brew --prefix)/etc/profile.d/shai.sh
+```
+
+This installs the `_shai_bin` binary and configures shell wrappers that provide the best experience for your shell.
+
+
+
+### GitHub Releases (Recommended for Linux)
+
+You can also download the pre-compiled binaries and shell wrapper scripts directly from the *GitHub Releases* page.
+
+#### Download the archive
+
+##### AMD64
+
+```bash
+curl -LO https://github.com/ameb8/shai/releases/download/v0.1.0/shai_linux_amd64.tar.gz
+```
+
+##### ARM64
+
+```bash
+curl -LO https://github.com/ameb8/shai/releases/download/v0.1.0/shai_linux_arm64.tar.gz
+```
+
+#### Extract the binary
+
+##### AMD64
+
+```bash
+tar -xzf shai_linux_amd64.tar.gz
+```
+
+##### ARM64
+
+```bash
+tar -xzf shai_linux_arm64.tar.gz
+```
+
+#### Create Directories for the Binary and the Scripts
+
+```bash
+mkdir -p ~/.local/bin ~/.config/shai
+```
+
+#### Move the Binary into PATH
+
+```bash
+mv _shai_bin ~/.local/bin/
+```
+
+#### Move the Wrapper Scripts to a Config Folder
+
+```bash
+mv shai.sh shai.zsh ~/.config/shai/
+```
+
+#### Source `shai` Automatically
+
+##### Add to `~/.zshrc`
+
+```bash
+source ~/.config/shai/shai.zsh
+```
+
+##### Add to `~/.bashrc`
+
+```bash
+source ~/.config/shai/shai.sh
+```
+
 
 ## Basic Usage
 
-Run with a query:
+Run with a natural language query:
 
 ```bash
-shai "show disk usage by folder in this directory"
+> shai "find all logs in /var/log modified in the last 24 hours"
+# Lists all `.log` files in `/var/log` modified in the last 24 hours. 
+# Use `-type f` to exclude directories
+> find /var/log -type f -mtime -1 -name '*.log'
 ```
 
-Current top-level behavior:
-- `shai [query]` runs a query
-- `shai config ...` manages config
+### Shell Integration
+
+`shai` behaves differently depending on your shell to provide the most ergonomic experience:
+
+- **Zsh:** The generated command is injected directly into your input buffer. You can edit it or just press `Enter` to execute.
+- **Bash:** Since Bash doesn't support buffer injection, `shai` automatically copies the generated command to your clipboard and displays it.
 
 ## Currently Supported Providers
 
-Right now, implemented providers are:
-- `gemini`
-- `mistral`
-
-## Query Flags (Current)
-
-- `--provider, -p` provider override for this run
-- `--model, -m` model override for this run
-- `--think` enabled flag (wired in CLI)
-- `--dry-run` print command output mode
-- `--verbose, -v` enabled flag (wired in CLI)
-- `--no-explain` hide explanation lines
-- `--shell` override detected shell (`bash|zsh|fish`)
+- `gemini` (Google)
+- `mistral` (Mistral AI)
+- `grok` (xAI)
 
 ## Configuration
 
-Config file location:
+Config file location: `~/.config/shai/config.toml`
 
-```text
-~/.config/shai/config.toml
-```
+Config file can be modified manually or through the *CLI*
 
-Directory/file permissions used by `shai`:
-- `~/.config/shai` -> `0700`
-- `config.toml` -> `0600`
+### Setup via CLI
 
-### Manage Config from CLI
+1. **Set your API key:**
+   ```bash
+   shai config set-key --provider gemini
+   ```
 
-Set API key (interactive prompt):
+2. **Set the active provider:**
+   ```bash
+   shai config set-provider gemini
+   ```
 
-```bash
-shai config set-key --provider gemini
-shai config set-key --provider mistral
-```
+3. **(Optional) Set a default model:**
+   ```bash
+   shai config set-model --provider gemini gemini-1.5-flash
+   ```
 
-Set active provider:
-
-```bash
-shai config set-provider gemini
-```
-
-Set default model for a provider:
-
-```bash
-shai config set-model --provider gemini gemini-2.5-flash
-```
-
-Show current config:
-
-```bash
-shai config get
-```
+4. **View current configuration:**
+   ```bash
+   shai config get
+   ```
 
 ### Minimal `config.toml` Example
 
@@ -83,17 +170,21 @@ provider = "gemini"
 
 [providers.gemini]
 api_key = "YOUR_API_KEY"
-default_model = "gemini-2.5-flash"
-
-[providers.mistral]
-api_key = "YOUR_API_KEY"
-default_model = "mistral-small-latest"
+default_model = "gemini-1.5-flash"
 ```
 
-If no active provider is configured, query mode fails and asks you to set one.
+## CLI Flags
 
-## Build
+- `--copy, -c` Force copy generated command to clipboard
+- `--dry-run` print command output mode
+- `--model, -m` model override for this run
+- `--no-explain` hide explanation lines
+- `--provider, -p` provider override for this run
+- `--shell` override detected shell (`bash|zsh`)
+- `--think` enabled flag
+- `--verbose, -v` enabled flag
+- `--version` version for shai
 
-```bash
-go build ./...
-```
+## License
+
+MIT
