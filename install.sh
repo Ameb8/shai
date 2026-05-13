@@ -3,6 +3,7 @@
 # and propagate pipe failures (-o pipefail) so a failed curl|grep doesn't silently pass
 set -euo pipefail
 
+
 # ── Constants ────────────────────────────────────────────────────────────────
 # GitHub repo in "owner/name" format — used to build API and download URLs
 REPO="ameb8/shai"
@@ -21,12 +22,14 @@ CONFIG_DIR="${HOME}/.config/shai"
 WRAPPER_SOURCE_LINE='source "${HOME}/.config/shai/shai.sh"'
 WRAPPER_SOURCE_LINE_ZSH='source "${HOME}/.config/shai/shai.zsh"'
 
+
 # ── Detect latest version ────────────────────────────────────────────────────
 # Query the GitHub releases API and parse the tag_name field from the JSON.
 # Use grep + sed instead of jq to avoid requiring jq as a dependency
 VERSION=$(curl -fsSL "https://api.github.com/repos/${REPO}/releases/latest" \
   | grep '"tag_name"' | sed 's/.*"tag_name": *"\([^"]*\)".*/\1/')
 echo "Installing shai ${VERSION}..."
+
 
 # ── Detect architecture ──────────────────────────────────────────────────────
 # uname -m returns the machine hardware name (e.g. x86_64, aarch64).
@@ -41,6 +44,7 @@ case "${ARCH}" in
     exit 1
     ;;
 esac
+
 
 # ── Download & extract ───────────────────────────────────────────────────────
 # Create a temporary directory for download and extraction.
@@ -63,6 +67,7 @@ curl -fsSL "${URL}" -o "${TMP}/${TARBALL}"
 # will land flat in $TMP
 tar -xzf "${TMP}/${TARBALL}" -C "${TMP}"
 
+
 # ── Install binary ───────────────────────────────────────────────────────────
 # Create the bin directory if it doesn't exist yet (-p suppresses errors if it does)
 mkdir -p "${INSTALL_DIR}"
@@ -77,6 +82,7 @@ chmod +x "${INSTALL_DIR}/_shai_bin"
 # subsequent commands that invoke _shai_bin directly can find it
 export PATH="${INSTALL_DIR}:${PATH}"
 
+
 # ── Install shell wrappers ───────────────────────────────────────────────────
 # Create the config dir if it doesn't already exist
 mkdir -p "${CONFIG_DIR}"
@@ -86,6 +92,62 @@ mkdir -p "${CONFIG_DIR}"
 # switches shells later
 mv "${TMP}/shai.sh"  "${CONFIG_DIR}/shai.sh"
 mv "${TMP}/shai.zsh" "${CONFIG_DIR}/shai.zsh"
+
+
+# ── Write install-shell.sh ───────────────────────────────────────────────────
+# Generate the shell registration script directly into CONFIG_DIR rather than
+# bundling it in the tarball. CONFIG_DIR is guaranteed to exist at this point.
+# Single-quoted 'EOF' prevents any variable expansion during generation —
+# ${HOME} and ${SHELL} inside are written literally and only evaluated when
+# the user actually runs install-shell.sh later
+cat > "${CONFIG_DIR}/install-shell.sh" << 'EOF'
+#!/usr/bin/env bash
+# Register shai in your current shell. Run this if you switch shells later:
+#   bash ~/.config/shai/install-shell.sh
+
+set -euo pipefail
+
+WRAPPER_SOURCE_LINE='source "${HOME}/.config/shai/shai.sh"'
+WRAPPER_SOURCE_LINE_ZSH='source "${HOME}/.config/shai/shai.zsh"'
+
+add_source_line() {
+  local rc_file="$1"
+  local line="$2"
+
+  if [[ -f "${rc_file}" ]] && grep -qF "${line}" "${rc_file}"; then
+    echo "  ${rc_file} already configured, skipping."
+    return
+  fi
+
+  echo "" >> "${rc_file}"
+  echo "# shai shell integration" >> "${rc_file}"
+  echo "${line}" >> "${rc_file}"
+  echo "  Added source line to ${rc_file}"
+}
+
+CURRENT_SHELL=$(basename "${SHELL}")
+case "${CURRENT_SHELL}" in
+  zsh)
+    add_source_line "${HOME}/.zshrc" "${WRAPPER_SOURCE_LINE_ZSH}"
+    echo "Run: source ~/.zshrc"
+    ;;
+  bash)
+    add_source_line "${HOME}/.bashrc" "${WRAPPER_SOURCE_LINE}"
+    echo "Run: source ~/.bashrc"
+    ;;
+  *)
+    echo "Unknown shell '${CURRENT_SHELL}'."
+    echo "Manually add to your rc file:"
+    echo "  source ~/.config/shai/shai.sh   # bash"
+    echo "  source ~/.config/shai/shai.zsh  # zsh"
+    ;;
+esac
+EOF
+
+# Make install-shell.sh executable so the user can run it without explicitly
+# invoking bash (though bash ~/.config/shai/install-shell.sh also works)
+chmod +x "${CONFIG_DIR}/install-shell.sh"
+
 
 # ── Wire up rc files (idempotent) ────────────────────────────────────────────
 # Appends a source line to an rc file only if it isn't already present.
@@ -129,6 +191,7 @@ case "${CURRENT_SHELL}" in
     ;;
 esac
 
+
 # ── Done ─────────────────────────────────────────────────────────────────────
 echo ""
 echo "shai ${VERSION} installed successfully!"
@@ -141,3 +204,7 @@ case "${CURRENT_SHELL}" in
   bash) echo "  source ~/.bashrc" ;;
   *)    echo "  source ~/.bashrc  # or ~/.zshrc" ;;
 esac
+
+echo ""
+echo "To register shai in a different shell later, run:"
+echo "  bash ~/.config/shai/install-shell.sh"
