@@ -54,7 +54,7 @@ This installs the `_shai_bin` binary and configures shell wrappers that provide 
 The easiest way to install `shai` on Linux. Automatically detects your architecture and shell.
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/ameb8/shai/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/ameb8/shai/master/install.sh | bash
 ```
 
 This installs the `_shai_bin` binary and configures shell wrappers that provide the best experience for your shell.
