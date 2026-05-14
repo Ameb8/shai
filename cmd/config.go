@@ -24,18 +24,18 @@ func newConfigCmd() *cobra.Command {
 			// Resolve the target provider from flags or interactive input.
 			providerName, _ := cmd.Flags().GetString("provider")
 			if providerName == "" {
-				fmt.Print("Enter provider (gemini/grok/mistral): ")
-				fmt.Scanln(&providerName)
+				cmd.Print("Enter provider (gemini/grok/mistral): ")
+				fmt.Fscanln(cmd.InOrStdin(), &providerName)
 			}
 			providerName = strings.ToLower(strings.TrimSpace(providerName))
 
 			// Prompt for and read the API key securely.
-			fmt.Printf("Enter API key for %s: ", providerName)
+			cmd.Printf("Enter API key for %s: ", providerName)
 			byteKey, err := term.ReadPassword(int(os.Stdin.Fd()))
 			if err != nil {
 				return err
 			}
-			fmt.Println() // Ensure terminal cursor moves to a new line.
+			cmd.Println() // Ensure terminal cursor moves to a new line.
 			key := strings.TrimSpace(string(byteKey))
 
 			// Update the in-memory configuration with the new key.
@@ -48,7 +48,7 @@ func newConfigCmd() *cobra.Command {
 				return fmt.Errorf("failed to save config: %w", err)
 			}
 
-			fmt.Printf("API key for %s set successfully.\n", providerName)
+			cmd.Printf("API key for %s set successfully.\n", providerName)
 			return nil
 		},
 	}
@@ -57,25 +57,28 @@ func newConfigCmd() *cobra.Command {
 		Use:   "get",
 		Short: "Print current configuration",
 		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Printf("Active Provider: %s\n", cfg.Active.Provider)
+			cmd.Printf("Active Provider: %s\n", cfg.Active.Provider)
 
 			// Display configured model aliases for quick reference.
-			fmt.Println("\nModels (Aliases):")
+			cmd.Println("\nModels (Aliases):")
 			if len(cfg.Models) == 0 {
-				fmt.Println("  None configured.")
+				cmd.Println("  None configured.")
 			}
 			for alias, model := range cfg.Models {
-				fmt.Printf("  %s: %s\n", alias, model)
+				cmd.Printf("  %s: %s\n", alias, model)
 			}
 
 			// Show detailed settings for each provider while protecting sensitive keys.
-			fmt.Println("\nProviders:")
+			cmd.Println("\nProviders:")
 			if len(cfg.Providers) == 0 {
-				fmt.Println("  None configured.")
+				cmd.Println("  None configured.")
 			}
 			for name, pCfg := range cfg.Providers {
-				fmt.Printf("  %s:\n", name)
-				fmt.Printf("    Default Model: %s\n", pCfg.DefaultModel)
+				cmd.Printf("  %s:\n", name)
+				cmd.Printf("    Default Model: %s\n", pCfg.DefaultModel)
+				if pCfg.BaseURL != "" {
+					cmd.Printf("    Base URL: %s\n", pCfg.BaseURL)
+				}
 
 				// Mask API keys to confirm existence without exposing them in cleartext.
 				keyStatus := "Not set"
@@ -85,7 +88,7 @@ func newConfigCmd() *cobra.Command {
 						keyStatus = fmt.Sprintf("%s...%s (redacted)", pCfg.APIKey[:4], pCfg.APIKey[len(pCfg.APIKey)-4:])
 					}
 				}
-				fmt.Printf("    API Key: %s\n", keyStatus)
+				cmd.Printf("    API Key: %s\n", keyStatus)
 			}
 		},
 	}
@@ -100,8 +103,8 @@ func newConfigCmd() *cobra.Command {
 			if len(args) > 0 {
 				providerName = args[0]
 			} else {
-				fmt.Print("Enter active provider: ")
-				fmt.Scanln(&providerName)
+				cmd.Print("Enter active provider: ")
+				fmt.Fscanln(cmd.InOrStdin(), &providerName)
 			}
 			providerName = strings.ToLower(strings.TrimSpace(providerName))
 
@@ -111,7 +114,7 @@ func newConfigCmd() *cobra.Command {
 				return fmt.Errorf("failed to save config: %w", err)
 			}
 
-			fmt.Printf("Active provider set to %s.\n", providerName)
+			cmd.Printf("Active provider set to %s.\n", providerName)
 			return nil
 		},
 	}
@@ -129,8 +132,8 @@ func newConfigCmd() *cobra.Command {
 			if len(args) > 0 {
 				modelName = args[0]
 			} else {
-				fmt.Print("Enter model name: ")
-				reader := bufio.NewReader(os.Stdin)
+				cmd.Print("Enter model name: ")
+				reader := bufio.NewReader(cmd.InOrStdin())
 				modelName, _ = reader.ReadString('\n')
 				modelName = strings.TrimSpace(modelName)
 			}
@@ -138,12 +141,12 @@ func newConfigCmd() *cobra.Command {
 			// Assign the model to either an alias or a provider-specific default.
 			if alias != "" {
 				cfg.Models[alias] = modelName
-				fmt.Printf("Alias '%s' set to model '%s'.\n", alias, modelName)
+				cmd.Printf("Alias '%s' set to model '%s'.\n", alias, modelName)
 			} else if providerName != "" {
 				pCfg := cfg.Providers[providerName]
 				pCfg.DefaultModel = modelName
 				cfg.Providers[providerName] = pCfg
-				fmt.Printf("Default model for provider '%s' set to '%s'.\n", providerName, modelName)
+				cmd.Printf("Default model for provider '%s' set to '%s'.\n", providerName, modelName)
 			} else {
 				return fmt.Errorf("must specify either --provider or --alias")
 			}
@@ -156,12 +159,48 @@ func newConfigCmd() *cobra.Command {
 		},
 	}
 
+	setURLCmd := &cobra.Command{
+		Use:   "set-url [url]",
+		Short: "Set base URL for a provider",
+		Args:  cobra.MaximumNArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			providerName, _ := cmd.Flags().GetString("provider")
+			if providerName == "" {
+				cmd.Print("Enter provider: ")
+				fmt.Fscanln(cmd.InOrStdin(), &providerName)
+			}
+			providerName = strings.ToLower(strings.TrimSpace(providerName))
+
+			var url string
+			if len(args) > 0 {
+				url = args[0]
+			} else {
+				cmd.Print("Enter base URL: ")
+				fmt.Fscanln(cmd.InOrStdin(), &url)
+			}
+			url = strings.TrimSpace(url)
+
+			pCfg := cfg.Providers[providerName]
+			pCfg.BaseURL = url
+			cfg.Providers[providerName] = pCfg
+
+			if err := cfg.Save(); err != nil {
+				return fmt.Errorf("failed to save config: %w", err)
+			}
+
+			cmd.Printf("Base URL for %s set to %s.\n", providerName, url)
+			return nil
+		},
+	}
+
 	cmd.AddCommand(setKeyCmd)
 	cmd.AddCommand(getCmd)
+	cmd.AddCommand(setURLCmd)
 	cmd.AddCommand(setProviderCmd)
 	cmd.AddCommand(setModelCmd)
 
 	setKeyCmd.Flags().StringP("provider", "p", "", "Provider to set key for")
+	setURLCmd.Flags().StringP("provider", "p", "", "Provider to set base URL for")
 	setModelCmd.Flags().StringP("provider", "p", "", "Provider to set model for")
 	setModelCmd.Flags().StringP("alias", "a", "", "Alias to set (e.g., smart, fast)")
 
