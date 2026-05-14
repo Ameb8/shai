@@ -13,6 +13,23 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// TestNewMistralProvider_BaseURL verifies that the Mistral provider correctly uses the BaseURL from configuration.
+func TestNewMistralProvider_BaseURL(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("default url", func(t *testing.T) {
+		p, err := NewMistralProvider(ctx, config.ProviderConfig{APIKey: "test-key"}, "")
+		require.NoError(t, err)
+		assert.Equal(t, mistralDefaultURL, p.url)
+	})
+
+	t.Run("custom url", func(t *testing.T) {
+		customURL := "https://custom.mistral.ai/v1"
+		p, err := NewMistralProvider(ctx, config.ProviderConfig{APIKey: "test-key", BaseURL: customURL}, "")
+		require.NoError(t, err)
+		assert.Equal(t, customURL, p.url)
+	})
+}
 // TestMistralComplete verifies that the Mistral provider correctly handles completion requests and tool calls.
 func TestMistralComplete(t *testing.T) {
 	tests := []struct {
