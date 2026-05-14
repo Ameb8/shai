@@ -13,25 +13,30 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestNewGrokProvider_BaseURL verifies that the Grok provider correctly uses the BaseURL from configuration.
-func TestNewGrokProvider_BaseURL(t *testing.T) {
+// TestNewOpenAIProvider_BaseURL verifies that the OpenAI provider correctly handles
+// both default and custom base URLs during initialization.
+func TestNewOpenAIProvider_BaseURL(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("default url", func(t *testing.T) {
-		p, err := NewGrokProvider(ctx, config.ProviderConfig{APIKey: "test-key"}, "")
+		// Ensure the default OpenAI API URL is used when no custom URL is provided.
+		p, err := NewOpenAIProvider(ctx, config.ProviderConfig{APIKey: "test-key"}, "")
 		require.NoError(t, err)
-		assert.Equal(t, grokDefaultURL, p.url)
+		assert.Equal(t, openaiDefaultURL, p.url)
 	})
 
 	t.Run("custom url", func(t *testing.T) {
-		customURL := "https://custom.x.ai/v1"
-		p, err := NewGrokProvider(ctx, config.ProviderConfig{APIKey: "test-key", BaseURL: customURL}, "")
+		// Ensure a custom base URL can be injected via configuration.
+		customURL := "https://custom.openai.com/v1/chat/completions"
+		p, err := NewOpenAIProvider(ctx, config.ProviderConfig{APIKey: "test-key", BaseURL: customURL}, "")
 		require.NoError(t, err)
 		assert.Equal(t, customURL, p.url)
 	})
 }
-// TestGrokComplete verifies that the Grok provider correctly handles completion requests and tool calls.
-func TestGrokComplete(t *testing.T) {
+
+// TestOpenAIComplete validates the OpenAI provider's ability to parse various
+// API responses, including text completions and tool calls.
+func TestOpenAIComplete(t *testing.T) {
 	tests := []struct {
 		name           string
 		responseBody   string
@@ -86,7 +91,7 @@ func TestGrokComplete(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var gotReq openAIChatRequest
-			// Define a mock transport to capture and respond to API requests.
+			// Mock the HTTP transport to intercept and validate requests.
 			transport := roundTripFunc(func(r *http.Request) (*http.Response, error) {
 				assert.Equal(t, "Bearer test-key", r.Header.Get("Authorization"))
 				err := json.NewDecoder(r.Body).Decode(&gotReq)
@@ -100,11 +105,11 @@ func TestGrokComplete(t *testing.T) {
 			})
 
 			ctx := context.Background()
-			p, err := NewGrokProvider(ctx, config.ProviderConfig{APIKey: "test-key"}, "grok-test")
+			p, err := NewOpenAIProvider(ctx, config.ProviderConfig{APIKey: "test-key"}, "gpt-test")
 			require.NoError(t, err)
 			p.client = &http.Client{Transport: transport}
 
-			// Execute the completion request and validate the response structure.
+			// Execute the completion request and verify the parsed response.
 			resp, err := p.Complete(ctx, CompletionRequest{
 				Messages: []Message{{Role: "user", Content: "hello"}},
 				Tools: []ToolDefinition{{
@@ -119,12 +124,13 @@ func TestGrokComplete(t *testing.T) {
 			})
 			require.NoError(t, err)
 
-			assert.Equal(t, "grok-test", gotReq.Model)
+			assert.Equal(t, "gpt-test", gotReq.Model)
 			assert.Equal(t, tt.expectedStop, resp.StopReason)
 			assert.Len(t, resp.ToolCalls, tt.expectedTools)
 			assert.Equal(t, tt.expectedInput, resp.InputTokens)
 			assert.Equal(t, tt.expectedOutput, resp.OutputTokens)
 
+			// Verify tool call details if expected.
 			if tt.expectedTools > 0 {
 				assert.Equal(t, "call_1", resp.ToolCalls[0].ID)
 				assert.Equal(t, "run_query", resp.ToolCalls[0].Name)

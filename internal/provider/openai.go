@@ -14,40 +14,37 @@ import (
 )
 
 const (
-	// mistralDefaultModel is the model used if no model is specified in the config or request.
-	mistralDefaultModel = "mistral-small-latest"
-	// mistralDefaultURL is the endpoint for Mistral's chat completion API.
-	mistralDefaultURL = "https://api.mistral.ai/v1/chat/completions"
+	openaiDefaultModel = "gpt-4o"
+	openaiDefaultURL   = "https://api.openai.com/v1/chat/completions"
 )
 
-// MistralProvider implements the provider.Provider interface using the Mistral AI API.
-type MistralProvider struct {
+// OpenAIProvider implements the Provider interface for the OpenAI API.
+type OpenAIProvider struct {
 	apiKey string
 	model  string
 	client *http.Client
 	url    string
 }
 
-// NewMistralProvider initializes a new Mistral provider with the given
-// configuration and model name.
-func NewMistralProvider(_ context.Context, cfg config.ProviderConfig, modelName string) (*MistralProvider, error) {
+// NewOpenAIProvider initializes a new OpenAIProvider with the given configuration and model.
+func NewOpenAIProvider(_ context.Context, cfg config.ProviderConfig, modelName string) (*OpenAIProvider, error) {
 	if cfg.APIKey == "" {
-		return nil, fmt.Errorf("mistral API key is required")
+		return nil, fmt.Errorf("openai API key is required")
 	}
 
 	if modelName == "" {
 		modelName = cfg.DefaultModel
 	}
 	if modelName == "" {
-		modelName = mistralDefaultModel
+		modelName = openaiDefaultModel
 	}
 
 	url := cfg.BaseURL
 	if url == "" {
-		url = mistralDefaultURL
+		url = openaiDefaultURL
 	}
 
-	return &MistralProvider{
+	return &OpenAIProvider{
 		apiKey: cfg.APIKey,
 		model:  modelName,
 		client: &http.Client{Timeout: 120 * time.Second},
@@ -55,22 +52,24 @@ func NewMistralProvider(_ context.Context, cfg config.ProviderConfig, modelName 
 	}, nil
 }
 
-// Name returns the provider identifier "mistral".
-func (p *MistralProvider) Name() string {
-	return "mistral"
+// Name returns the identifier for this provider.
+func (p *OpenAIProvider) Name() string {
+	return "openai"
 }
 
-// ValidateKey checks if the API key is valid by sending a minimal completion request.
-func (p *MistralProvider) ValidateKey(ctx context.Context) error {
+// ValidateKey checks the validity of the API key by sending a minimal completion request.
+func (p *OpenAIProvider) ValidateKey(ctx context.Context) error {
 	_, err := p.Complete(ctx, CompletionRequest{
-		Messages:  []Message{{Role: "user", Content: "ping"}},
+		Messages: []Message{
+			{Role: "user", Content: "ping"},
+		},
 		MaxTokens: 1,
 	})
 	return err
 }
 
-// Complete sends a chat completion request to the Mistral API.
-func (p *MistralProvider) Complete(ctx context.Context, req CompletionRequest) (CompletionResponse, error) {
+// Complete sends a completion request to the OpenAI API and returns the response.
+func (p *OpenAIProvider) Complete(ctx context.Context, req CompletionRequest) (CompletionResponse, error) {
 	model := req.Model
 	if model == "" {
 		model = p.model
@@ -88,7 +87,7 @@ func (p *MistralProvider) Complete(ctx context.Context, req CompletionRequest) (
 		return CompletionResponse{}, err
 	}
 	if len(response.Choices) == 0 {
-		return CompletionResponse{}, fmt.Errorf("mistral returned no choices")
+		return CompletionResponse{}, fmt.Errorf("openai returned no choices")
 	}
 
 	choice := response.Choices[0]
@@ -110,8 +109,8 @@ func (p *MistralProvider) Complete(ctx context.Context, req CompletionRequest) (
 	return result, nil
 }
 
-// do performs the HTTP POST request to the Mistral API and decodes the response.
-func (p *MistralProvider) do(ctx context.Context, body openAIChatRequest, out any) error {
+// do executes an HTTP request to the OpenAI API.
+func (p *OpenAIProvider) do(ctx context.Context, body openAIChatRequest, out any) error {
 	payload, err := json.Marshal(body)
 	if err != nil {
 		return err
@@ -135,11 +134,11 @@ func (p *MistralProvider) do(ctx context.Context, body openAIChatRequest, out an
 		return err
 	}
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return fmt.Errorf("mistral API error %d: %s", resp.StatusCode, strings.TrimSpace(string(respBody)))
+		return fmt.Errorf("openai API error %d: %s", resp.StatusCode, strings.TrimSpace(string(respBody)))
 	}
 
 	if err := json.Unmarshal(respBody, out); err != nil {
-		return fmt.Errorf("failed to decode mistral response: %w", err)
+		return fmt.Errorf("failed to decode openai response: %w", err)
 	}
 
 	return nil

@@ -79,15 +79,15 @@ func (p *GrokProvider) Complete(ctx context.Context, req CompletionRequest) (Com
 	}
 
 	// Construct the request body using mapped messages and tools.
-	body := grokChatRequest{
+	body := openAIChatRequest{
 		Model:     model,
-		Messages:  mapGrokMessages(req.Messages),
-		Tools:     mapGrokTools(req.Tools),
+		Messages:  mapOpenAIMessages(req.Messages),
+		Tools:     mapOpenAITools(req.Tools),
 		MaxTokens: req.MaxTokens,
 		Stream:    false,
 	}
 
-	var response grokChatResponse
+	var response openAIChatResponse
 	if err := p.do(ctx, body, &response); err != nil {
 		return CompletionResponse{}, err
 	}
@@ -117,7 +117,7 @@ func (p *GrokProvider) Complete(ctx context.Context, req CompletionRequest) (Com
 }
 
 // do executes an HTTP request to the Grok API and decodes the response into the output object.
-func (p *GrokProvider) do(ctx context.Context, body grokChatRequest, out any) error {
+func (p *GrokProvider) do(ctx context.Context, body openAIChatRequest, out any) error {
 	payload, err := json.Marshal(body)
 	if err != nil {
 		return err
@@ -151,178 +151,4 @@ func (p *GrokProvider) do(ctx context.Context, body grokChatRequest, out any) er
 	}
 
 	return nil
-}
-
-// grokChatRequest defines the structure for a chat completion request to the Grok API.
-type grokChatRequest struct {
-	Model     string        `json:"model"`
-	Messages  []grokMessage `json:"messages"`
-	Tools     []grokTool    `json:"tools,omitempty"`
-	MaxTokens int           `json:"max_tokens,omitempty"`
-	Stream    bool          `json:"stream"`
-}
-
-// grokMessage represents a single message in a Grok chat completion request.
-type grokMessage struct {
-	Role       string         `json:"role"`
-	Content    string         `json:"content,omitempty"`
-	ToolCalls  []grokToolCall `json:"tool_calls,omitempty"`
-	ToolCallID string         `json:"tool_call_id,omitempty"`
-}
-
-// grokTool defines a tool that the model can call during a completion.
-type grokTool struct {
-	Type     string       `json:"type"`
-	Function grokFunction `json:"function"`
-}
-
-// grokFunction describes a function that a tool can execute.
-type grokFunction struct {
-	Name        string         `json:"name"`
-	Description string         `json:"description,omitempty"`
-	Parameters  grokJSONSchema `json:"parameters"`
-}
-
-// grokJSONSchema defines the structure of parameters for a tool function.
-type grokJSONSchema struct {
-	Type        string                    `json:"type"`
-	Properties  map[string]grokJSONSchema `json:"properties,omitempty"`
-	Items       *grokJSONSchema           `json:"items,omitempty"`
-	Required    []string                  `json:"required,omitempty"`
-	Description string                    `json:"description,omitempty"`
-	Enum        []string                  `json:"enum,omitempty"`
-}
-
-// grokToolCall represents a tool call initiated by the model.
-type grokToolCall struct {
-	ID       string               `json:"id,omitempty"`
-	Type     string               `json:"type,omitempty"`
-	Function grokToolCallFunction `json:"function"`
-}
-
-// grokToolCallFunction contains the details of a function being called.
-type grokToolCallFunction struct {
-	Name      string `json:"name"`
-	Arguments string `json:"arguments"`
-}
-
-// grokChatResponse defines the structure for a chat completion response from the Grok API.
-type grokChatResponse struct {
-	Choices []struct {
-		FinishReason string      `json:"finish_reason"`
-		Message      grokMessage `json:"message"`
-	} `json:"choices"`
-	Usage struct {
-		PromptTokens     int `json:"prompt_tokens"`
-		CompletionTokens int `json:"completion_tokens"`
-	} `json:"usage"`
-}
-
-// mapGrokMessages converts internal message structures to Grok-specific message structures.
-func mapGrokMessages(messages []Message) []grokMessage {
-	result := make([]grokMessage, 0, len(messages))
-	for _, msg := range messages {
-		mapped := grokMessage{
-			Role:       msg.Role,
-			Content:    msg.Content,
-			ToolCallID: msg.ToolCallID,
-		}
-		// Attach tool calls if the message is from the assistant.
-		if msg.Role == "assistant" {
-			mapped.ToolCalls = mapGrokToolCalls(msg.ToolCalls)
-		}
-		result = append(result, mapped)
-	}
-	return result
-}
-
-// mapGrokTools converts internal tool definitions to Grok-specific tool structures.
-func mapGrokTools(tools []ToolDefinition) []grokTool {
-	if len(tools) == 0 {
-		return nil
-	}
-
-	result := make([]grokTool, 0, len(tools))
-	for _, tool := range tools {
-		result = append(result, grokTool{
-			Type: "function",
-			Function: grokFunction{
-				Name:        tool.Name,
-				Description: tool.Description,
-				Parameters: grokJSONSchema{
-					Type:       "object",
-					Properties: mapGrokParameters(tool.Parameters),
-					Required:   tool.Required,
-				},
-			},
-		})
-	}
-	return result
-}
-
-// mapGrokParameters converts internal parameter definitions to Grok-specific JSON schema structures.
-func mapGrokParameters(params map[string]ParameterDef) map[string]grokJSONSchema {
-	result := make(map[string]grokJSONSchema, len(params))
-	for name, param := range params {
-		schema := grokJSONSchema{
-			Type:        param.Type,
-			Description: param.Description,
-			Enum:        param.Enum,
-		}
-		// Handle array types by specifying the items schema.
-		if param.Type == "array" {
-			schema.Items = &grokJSONSchema{Type: "string"}
-		}
-		result[name] = schema
-	}
-	return result
-}
-
-// mapGrokToolCalls converts internal tool call structures to Grok-specific tool call structures.
-func mapGrokToolCalls(calls []ToolCall) []grokToolCall {
-	if len(calls) == 0 {
-		return nil
-	}
-
-	result := make([]grokToolCall, 0, len(calls))
-	for _, call := range calls {
-		// Serialize tool arguments to JSON, defaulting to empty object on error.
-		encodedArgs, err := json.Marshal(call.Args)
-		if err != nil {
-			encodedArgs = []byte("{}")
-		}
-		result = append(result, grokToolCall{
-			ID:   call.ID,
-			Type: "function",
-			Function: grokToolCallFunction{
-				Name:      call.Name,
-				Arguments: string(encodedArgs),
-			},
-		})
-	}
-	return result
-}
-
-// mapProviderToolCalls converts Grok-specific tool call structures back to internal tool call structures.
-func mapProviderToolCalls(calls []grokToolCall) []ToolCall {
-	if len(calls) == 0 {
-		return nil
-	}
-
-	result := make([]ToolCall, 0, len(calls))
-	for _, call := range calls {
-		args := map[string]any{}
-		// Deserialize function arguments from JSON string into a map.
-		if call.Function.Arguments != "" {
-			if err := json.Unmarshal([]byte(call.Function.Arguments), &args); err != nil {
-				args = map[string]any{}
-			}
-		}
-		result = append(result, ToolCall{
-			ID:   call.ID,
-			Name: call.Function.Name,
-			Args: args,
-		})
-	}
-	return result
 }
