@@ -85,7 +85,7 @@ func TestGrokComplete(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var gotReq grokChatRequest
+			var gotReq openAIChatRequest
 			// Define a mock transport to capture and respond to API requests.
 			transport := roundTripFunc(func(r *http.Request) (*http.Response, error) {
 				assert.Equal(t, "Bearer test-key", r.Header.Get("Authorization"))
