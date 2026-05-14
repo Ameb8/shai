@@ -13,6 +13,23 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// TestNewGrokProvider_BaseURL verifies that the Grok provider correctly uses the BaseURL from configuration.
+func TestNewGrokProvider_BaseURL(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("default url", func(t *testing.T) {
+		p, err := NewGrokProvider(ctx, config.ProviderConfig{APIKey: "test-key"}, "")
+		require.NoError(t, err)
+		assert.Equal(t, grokDefaultURL, p.url)
+	})
+
+	t.Run("custom url", func(t *testing.T) {
+		customURL := "https://custom.x.ai/v1"
+		p, err := NewGrokProvider(ctx, config.ProviderConfig{APIKey: "test-key", BaseURL: customURL}, "")
+		require.NoError(t, err)
+		assert.Equal(t, customURL, p.url)
+	})
+}
 // TestGrokComplete verifies that the Grok provider correctly handles completion requests and tool calls.
 func TestGrokComplete(t *testing.T) {
 	tests := []struct {

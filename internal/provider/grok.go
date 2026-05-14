@@ -41,11 +41,16 @@ func NewGrokProvider(_ context.Context, cfg config.ProviderConfig, modelName str
 		modelName = grokDefaultModel
 	}
 
+	url := cfg.BaseURL
+	if url == "" {
+		url = grokDefaultURL
+	}
+
 	return &GrokProvider{
 		apiKey: cfg.APIKey,
 		model:  modelName,
 		client: &http.Client{Timeout: 120 * time.Second},
-		url:    grokDefaultURL,
+		url:    url,
 	}, nil
 }
 

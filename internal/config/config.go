@@ -23,6 +23,7 @@ type ActiveConfig struct {
 type ProviderConfig struct {
 	APIKey       string `mapstructure:"api_key" toml:"api_key"`
 	DefaultModel string `mapstructure:"default_model" toml:"default_model"`
+	BaseURL      string `mapstructure:"base_url,omitempty" toml:"base_url,omitempty"`
 }
 
 // GetConfigPath returns the absolute path to the shai configuration file.

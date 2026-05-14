@@ -105,6 +105,9 @@ var cfg *config.Config
 // initConfig loads the application configuration from files or environment variables.
 // It terminates the process if the configuration fails to load.
 func initConfig() {
+	if cfg != nil {
+		return
+	}
 	var err error
 	// Load the unified configuration from default paths and environment.
 	cfg, err = config.Load()
