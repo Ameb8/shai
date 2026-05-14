@@ -76,14 +76,14 @@ func (p *MistralProvider) Complete(ctx context.Context, req CompletionRequest) (
 		model = p.model
 	}
 
-	body := mistralChatRequest{
+	body := openAIChatRequest{
 		Model:     model,
-		Messages:  mapGrokMessages(req.Messages),
-		Tools:     mapGrokTools(req.Tools),
+		Messages:  mapOpenAIMessages(req.Messages),
+		Tools:     mapOpenAITools(req.Tools),
 		MaxTokens: req.MaxTokens,
 	}
 
-	var response mistralChatResponse
+	var response openAIChatResponse
 	if err := p.do(ctx, body, &response); err != nil {
 		return CompletionResponse{}, err
 	}
@@ -111,7 +111,7 @@ func (p *MistralProvider) Complete(ctx context.Context, req CompletionRequest) (
 }
 
 // do performs the HTTP POST request to the Mistral API and decodes the response.
-func (p *MistralProvider) do(ctx context.Context, body mistralChatRequest, out any) error {
+func (p *MistralProvider) do(ctx context.Context, body openAIChatRequest, out any) error {
 	payload, err := json.Marshal(body)
 	if err != nil {
 		return err
@@ -143,24 +143,4 @@ func (p *MistralProvider) do(ctx context.Context, body mistralChatRequest, out a
 	}
 
 	return nil
-}
-
-// mistralChatRequest defines the JSON structure for a Mistral chat completion request.
-type mistralChatRequest struct {
-	Model     string        `json:"model"`
-	Messages  []grokMessage `json:"messages"`
-	Tools     []grokTool    `json:"tools,omitempty"`
-	MaxTokens int           `json:"max_tokens,omitempty"`
-}
-
-// mistralChatResponse defines the JSON structure for a Mistral chat completion response.
-type mistralChatResponse struct {
-	Choices []struct {
-		FinishReason string      `json:"finish_reason"`
-		Message      grokMessage `json:"message"`
-	} `json:"choices"`
-	Usage struct {
-		PromptTokens     int `json:"prompt_tokens"`
-		CompletionTokens int `json:"completion_tokens"`
-	} `json:"usage"`
 }
