@@ -17,6 +17,7 @@ import (
 type GeminiProvider struct {
 	client *genai.Client
 	model  string
+	url    string
 }
 
 // NewGeminiProvider initializes a new Gemini provider with the given configuration
@@ -26,7 +27,13 @@ func NewGeminiProvider(ctx context.Context, cfg config.ProviderConfig, modelName
 		return nil, fmt.Errorf("gemini API key is required")
 	}
 
-	client, err := genai.NewClient(ctx, option.WithAPIKey(cfg.APIKey))
+	opts := []option.ClientOption{option.WithAPIKey(cfg.APIKey)}
+	url := cfg.BaseURL
+	if url != "" {
+		opts = append(opts, option.WithEndpoint(url))
+	}
+
+	client, err := genai.NewClient(ctx, opts...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create gemini client: %w", err)
 	}
@@ -41,6 +48,7 @@ func NewGeminiProvider(ctx context.Context, cfg config.ProviderConfig, modelName
 	return &GeminiProvider{
 		client: client,
 		model:  modelName,
+		url:    url,
 	}, nil
 }
 

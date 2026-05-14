@@ -42,11 +42,16 @@ func NewMistralProvider(_ context.Context, cfg config.ProviderConfig, modelName 
 		modelName = mistralDefaultModel
 	}
 
+	url := cfg.BaseURL
+	if url == "" {
+		url = mistralDefaultURL
+	}
+
 	return &MistralProvider{
 		apiKey: cfg.APIKey,
 		model:  modelName,
 		client: &http.Client{Timeout: 120 * time.Second},
-		url:    mistralDefaultURL,
+		url:    url,
 	}, nil
 }
 
