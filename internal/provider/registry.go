@@ -39,6 +39,8 @@ func NewProvider(ctx context.Context, name string, cfg config.Config, modelOverr
 		return NewMistralProvider(ctx, pCfg, modelName)
 	case "grok", "xai":
 		return NewGrokProvider(ctx, pCfg, modelName)
+	case "openai":
+		return NewOpenAIProvider(ctx, pCfg, modelName)
 	default:
 		return nil, fmt.Errorf("unknown provider: %s", name)
 	}
