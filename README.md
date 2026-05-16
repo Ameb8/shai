@@ -1,12 +1,20 @@
 # shai
 
-`shai` is a terminal-native AI agent that turns a natural-language request into a single shell command.
+![License](https://img.shields.io/github/license/ameb8/shai) ![Version](https://img.shields.io/github/v/release/ameb8/shai) ![Linux](https://img.shields.io/badge/Linux-FCC624?style=flat-square&logo=linux&logoColor=black) ![macOS](https://img.shields.io/badge/macOS-000000?style=flat-square&logo=apple&logoColor=white)
+
+
+**A lightweight terminal-native AI agent that turns natural-language requests into shell commands.**
+
+<div align="center">
+  <img src="media/shai.gif" alt="shai CLI Demo" width="100%" style="max-width: 750px;">
+</div>
+
+`shai` does not execute commands directly. Instead, it stages them for your review. In *Zsh* shells, they are injected into the shell's input buffer, allowing for execution by simply pressing the enter key. Bash shells print out the command normally and copies it to the keyboard.
 
 It prints:
 - Explanation lines prefixed with `#`
 - The generated command prefixed with `>`
 
-`shai` does not execute commands directly. Instead, it stages them for your review. In *Zsh* shells, they are injected into the shell's input buffer, allowing for execution by simply pressing the enter key. Bash shells print out the command normally and copies it to the keyboard.
 
 `shai` is able to query system and environment data in order to construct correct commands. The final output command returned by `shai` is not restricted to read-only commands. `shai` will output a warning if LLM deems command to be risky or dangerous.
 
