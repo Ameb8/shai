@@ -56,3 +56,8 @@ jobs:
             -race \
             -count=1 \
             ./...
+
+  # Run black box install test suite
+  install-test:
+    name: Install Script Tests
+    uses: ./.github/workflows/install-tests.yml

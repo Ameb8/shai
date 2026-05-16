@@ -46,6 +46,7 @@ brews:
       owner: ameb8
       name: homebrew-tools
       token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+      directory: Formula
     homepage: "https://github.com/ameb8/shai"
     description: "Terminal-native AI agent that turns natural language into shell commands"
     license: "MIT"

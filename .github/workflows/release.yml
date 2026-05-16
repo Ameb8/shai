@@ -19,8 +19,21 @@ permissions:
   contents: write
 
 jobs: 
+  verify-install-script:
+    # Run the reusable install-script integration test workflow
+    # before publishing any release artifacts.
+    #
+    # This acts as a release gate to ensure the public installation
+    # experience still works in a clean environment before binaries,
+    # packages, and Homebrew formulas are published.
+    uses: ./.github/workflows/install-tests.yml
+
   release:
+    # Prevent releases from publishing if install-script
+    # validation fails.
+    needs: verify-install-script
     runs-on: ubuntu-latest
+    
     steps:
       # Checkout full git history and tags
       #
