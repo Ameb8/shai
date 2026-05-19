@@ -2,17 +2,10 @@ package prompt
 
 import (
 	"bytes"
-	"os"
-	"runtime"
 	"text/template"
-)
 
-// SystemPromptData contains the environmental context used to populate the system prompt template.
-type SystemPromptData struct {
-	OS    string
-	Shell string
-	Cwd   string
-}
+	"github.com/ameb8/shai/internal/sysenv"
+)
 
 // systemPromptTemplate defines the base instructions and constraints for the AI agent.
 const systemPromptTemplate = `You are shai, a terminal assistant running on {{.OS}} with {{.Shell}}.
@@ -45,21 +38,8 @@ Output format (strictly):
 
 // BuildSystemPrompt constructs the full system prompt string by injecting runtime context into the template.
 func BuildSystemPrompt(shellOverride string) (string, error) {
-	// Resolve the current working directory and shell environment.
-	cwd, _ := os.Getwd()
-	shell := shellOverride
-	if shell == "" {
-		shell = os.Getenv("SHELL")
-		if shell == "" {
-			shell = "unknown"
-		}
-	}
-
-	data := SystemPromptData{
-		OS:    runtime.GOOS,
-		Shell: shell,
-		Cwd:   cwd,
-	}
+	// Resolve the runtime environment.
+	data := sysenv.GetRuntime(shellOverride)
 
 	// Parse and execute the system prompt template with the gathered context.
 	tmpl, err := template.New("system").Parse(systemPromptTemplate)

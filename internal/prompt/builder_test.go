@@ -5,6 +5,7 @@ import (
 	"runtime"
 	"testing"
 
+	"github.com/ameb8/shai/internal/sysenv"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -49,6 +50,7 @@ func TestBuildSystemPrompt(t *testing.T) {
 	// Execute each test case, mocking the shell environment as needed.
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			sysenv.ResetRuntimeForTest()
 			if tt.envShell != "" {
 				os.Setenv("SHELL", tt.envShell)
 			} else {
