@@ -1,0 +1,23 @@
+internal/tools/registry.go
+  s_107d015d9db865::t_a88d2e25fb45ce 37-54
+  s_107d015d9db865::t_ccda1d7d2ba4fb 122-153
+  s_107d015d9db865::t_463f3e1819d116 7
+  s_107d015d9db865::t_f7db10d5776f03 83-95
+  s_107d015d9db865::t_82af5bb7c604d5 13-16
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.11",
+  "base_commit_sha": "c9f34eff61b08f8b1630b0777bf9524bda91a6a2",
+  "prompts": {},
+  "sessions": {
+    "s_107d015d9db865": {
+      "agent_id": {
+        "tool": "gemini",
+        "id": "8815b7f8-b8ca-4efb-8cb0-bf86695c2e94",
+        "model": "gemini-3-flash-preview"
+      },
+      "human_author": "Alex Buckley <alexmeb81@outlook.com>"
+    }
+  }
+}
