@@ -7,6 +7,8 @@ import (
 	"os/exec"
 	"strings"
 	"time"
+
+	"github.com/ameb8/shai/internal/sysenv"
 )
 
 const (
@@ -39,7 +41,7 @@ func RunQuery(ctx context.Context, args RunQueryArgs) (RunQueryResult, error) {
 	defer cancel()
 
 	cmd := exec.CommandContext(ctx, args.Executable, args.Args...)
-	cmd.Env = ScrubbedEnv()
+	cmd.Env = sysenv.ScrubbedEnv()
 
 	remaining := maxOutputBytes
 	truncated := false
