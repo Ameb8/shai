@@ -1,0 +1,19 @@
+internal/tools/proc_info.go
+  s_107d015d9db865::t_4a2766dc2cffa2 1-204
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.11",
+  "base_commit_sha": "2690e5dbf89c3be0a7881d4570cb70d50f8051b1",
+  "prompts": {},
+  "sessions": {
+    "s_107d015d9db865": {
+      "agent_id": {
+        "tool": "gemini",
+        "id": "8815b7f8-b8ca-4efb-8cb0-bf86695c2e94",
+        "model": "gemini-3-flash-preview"
+      },
+      "human_author": "Alex Buckley <alexmeb81@outlook.com>"
+    }
+  }
+}
