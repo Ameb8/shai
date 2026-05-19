@@ -1,9 +1,53 @@
-package tools
+package sysenv
 
 import (
 	"os"
+	"runtime"
 	"strings"
+	"sync"
 )
+
+// Runtime contains the environmental context of the current execution.
+type Runtime struct {
+	OS    string
+	Shell string
+	Cwd   string
+}
+
+var (
+	instance *Runtime
+	once     sync.Once
+)
+
+// GetRuntime returns the cached runtime environment. If it hasn't been
+// initialized yet, it detects the environment using the provided shell override.
+func GetRuntime(shellOverride string) *Runtime {
+	once.Do(func() {
+		cwd, _ := os.Getwd()
+		shell := shellOverride
+		if shell == "" {
+			shell = os.Getenv("SHELL")
+			if shell == "" {
+				shell = "unknown"
+			}
+		}
+
+		instance = &Runtime{
+			OS:    runtime.GOOS,
+			Shell: shell,
+			Cwd:   cwd,
+		}
+	})
+	return instance
+}
+
+// ResetRuntimeForTest clears the cached runtime environment, allowing it to be
+// re-detected in subsequent calls to GetRuntime. This is intended for use in
+// unit tests only.
+func ResetRuntimeForTest() {
+	instance = nil
+	once = sync.Once{}
+}
 
 // ScrubbedEnv returns the current process environment variables with sensitive
 // information like API keys, secrets, and tokens filtered out.
