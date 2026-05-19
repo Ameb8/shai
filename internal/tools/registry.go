@@ -4,12 +4,16 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strconv"
 
 	"github.com/ameb8/shai/internal/provider"
 )
 
 // RunQueryToolName is the unique identifier for the system inspection tool.
-const RunQueryToolName = "run_query"
+const (
+	RunQueryToolName = "run_query"
+	ProcInfoToolName = "proc_info"
+)
 
 // Definitions returns the list of provider-agnostic tool definitions available to the agent.
 // These definitions inform the LLM about the tool's purpose and expected parameters.
@@ -29,6 +33,24 @@ func Definitions() []provider.ToolDefinition {
 				},
 			},
 			Required: []string{"executable", "args"},
+		},
+		{
+			Name:        ProcInfoToolName,
+			Description: "Get structured information about running processes, optionally filtered by port, name, or user. Replaces ps, lsof, and ss for process/port inspection.",
+			Parameters: map[string]provider.ParameterDef{
+				"port": {
+					Type:        "integer",
+					Description: "Filter processes by the port they are listening on.",
+				},
+				"name": {
+					Type:        "string",
+					Description: "Filter processes by name (case-insensitive substring match).",
+				},
+				"user": {
+					Type:        "string",
+					Description: "Filter processes by user name.",
+				},
+			},
 		},
 	}
 }
@@ -58,6 +80,19 @@ func Dispatch(ctx context.Context, call provider.ToolCall) (string, error) {
 			return string(resultJSON), err
 		}
 		return marshalJSON(result)
+	case ProcInfoToolName:
+		args, err := parseProcInfoArgs(call.Args)
+		if err != nil {
+			return "", err
+		}
+		result, err := RunProcInfo(ctx, args)
+		if err != nil {
+			return marshalJSON(map[string]any{
+				"error":  err.Error(),
+				"result": result,
+			})
+		}
+		return marshalJSON(result)
 	default:
 		return "", fmt.Errorf("unknown tool %q", call.Name)
 	}
@@ -82,6 +117,38 @@ func parseRunQueryArgs(raw map[string]any) (RunQueryArgs, error) {
 		Executable: executable,
 		Args:       args,
 	}, nil
+}
+
+// parseProcInfoArgs converts raw map arguments into a typed ProcInfoArgs structure.
+func parseProcInfoArgs(raw map[string]any) (ProcInfoArgs, error) {
+	args := ProcInfoArgs{}
+
+	if port, ok := raw["port"]; ok {
+		switch p := port.(type) {
+		case float64:
+			args.Port = int(p)
+		case int:
+			args.Port = p
+		case string:
+			if val, err := strconv.Atoi(p); err == nil {
+				args.Port = val
+			} else {
+				return ProcInfoArgs{}, fmt.Errorf("proc_info port must be an integer")
+			}
+		default:
+			return ProcInfoArgs{}, fmt.Errorf("proc_info port must be an integer")
+		}
+	}
+
+	if name, ok := raw["name"].(string); ok {
+		args.Name = name
+	}
+
+	if user, ok := raw["user"].(string); ok {
+		args.User = user
+	}
+
+	return args, nil
 }
 
 // stringSlice converts an interface value into a string slice to normalize LLM outputs.
