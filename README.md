@@ -1,6 +1,6 @@
 # shai
 
-![License](https://img.shields.io/github/license/ameb8/shai) ![Version](https://img.shields.io/github/v/release/ameb8/shai) ![Linux](https://img.shields.io/badge/Linux-FCC624?style=flat-square&logo=linux&logoColor=black) ![macOS](https://img.shields.io/badge/macOS-000000?style=flat-square&logo=apple&logoColor=white)
+![License](https://img.shields.io/github/license/ameb8/shai) ![Version](https://img.shields.io/github/v/release/ameb8/shai) ![https://img.shields.io/github/downloads/ameb8/shai/total] ![Linux](https://img.shields.io/badge/Linux-FCC624?style=flat-square&logo=linux&logoColor=black) ![macOS](https://img.shields.io/badge/macOS-000000?style=flat-square&logo=apple&logoColor=white)
 
 
 **A lightweight terminal-native AI agent that turns natural-language requests into shell commands.**
@@ -179,11 +179,18 @@ Run with a natural language query:
 
 ---
 
-## Currently Supported Providers
+## Provider Support
+
+`shai` supports native provider adapters and any provider that exposes an OpenAI-compatible chat completions API.
+
+Native providers:
 
 - `gemini` (Google)
 - `mistral` (Mistral AI)
 - `grok` (xAI)
+- `openai` (OpenAI)
+
+OpenAI-compatible providers can be configured through the `openai` provider by setting a compatible chat completions URL, for example a self-hosted gateway, local model server, or third-party provider that implements the OpenAI Chat Completions format.
 
 ---
 
@@ -210,21 +217,45 @@ Config file can be modified manually or through the *CLI*
    shai config set-model --provider gemini gemini-1.5-flash
    ```
 
-4. **View current configuration:**
+4. **(Optional) Set a custom provider URL:**
+   ```bash
+   shai config set-url --provider gemini https://generativelanguage.googleapis.com
+   ```
+
+5. **View current configuration:**
    ```bash
    shai config get
    ```
+
+### OpenAI-Compatible Provider Example
+
+Use the `openai` provider for any OpenAI-compatible chat completions endpoint:
+
+```bash
+shai config set-key --provider openai
+shai config set-provider openai
+shai config set-model --provider openai llama-3.1-70b-instruct
+shai config set-url --provider openai https://example.com/v1/chat/completions
+```
 
 ### Minimal `config.toml` Example
 
 ```toml
 [active]
-provider = "gemini"
+provider = "openai"
+
+[providers.openai]
+api_key = "YOUR_API_KEY"
+default_model = "llama-3.1-70b-instruct"
+base_url = "https://example.com/v1/chat/completions"
 
 [providers.gemini]
-api_key = "YOUR_API_KEY"
+api_key = "YOUR_GEMINI_API_KEY"
 default_model = "gemini-1.5-flash"
+base_url = "https://generativelanguage.googleapis.com"
 ```
+
+The `base_url` field is optional. When omitted, `shai` uses the provider's built-in default URL.
 
 ---
 
