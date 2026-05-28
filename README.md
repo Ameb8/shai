@@ -1,6 +1,6 @@
 # shai
 
-![License](https://img.shields.io/github/license/ameb8/shai) ![Version](https://img.shields.io/github/v/release/ameb8/shai) ![https://img.shields.io/github/downloads/ameb8/shai/total] ![Linux](https://img.shields.io/badge/Linux-FCC624?style=flat-square&logo=linux&logoColor=black) ![macOS](https://img.shields.io/badge/macOS-000000?style=flat-square&logo=apple&logoColor=white)
+![License](https://img.shields.io/github/license/ameb8/shai) ![Version](https://img.shields.io/github/v/release/ameb8/shai) ![Downloads](https://img.shields.io/github/downloads/ameb8/shai/total) ![Linux](https://img.shields.io/badge/Linux-FCC624?style=flat-square&logo=linux&logoColor=black) ![macOS](https://img.shields.io/badge/macOS-000000?style=flat-square&logo=apple&logoColor=white)
 
 
 **A lightweight terminal-native AI agent that turns natural-language requests into shell commands.**
