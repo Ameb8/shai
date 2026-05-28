@@ -1,0 +1,25 @@
+README.md
+  h_11a994996f9bb9 3
+  s_237e6222f6096e::t_5156c3b523791e 182-186,191-193,220-225,230-240,245,247,249-253,255,258-259,280
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "development:1.4.12",
+  "base_commit_sha": "a3b2edb16aac38247fd1b2a76b992f3e35e3262e",
+  "prompts": {},
+  "humans": {
+    "h_11a994996f9bb9": {
+      "author": "Alex Buckley <alexmeb81@outlook.com>"
+    }
+  },
+  "sessions": {
+    "s_237e6222f6096e": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019e6d13-c0b1-7b62-aca8-70546e30556e",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Alex Buckley <alexmeb81@outlook.com>"
+    }
+  }
+}
